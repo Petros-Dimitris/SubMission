@@ -7,7 +7,6 @@ import java.util.Set;
 import interfaces.ISubmission;
 import interfaces.ISubmissionCycle;
 import interfaces.ISubmissionData;
-import interfaces.ISubmissionExtension;
 import interfaces.ISubmissionPhase;
 import managers.exceptions.FailedToSubmitPreviousDataException;
 import managers.exceptions.InvalidStatusException;
@@ -26,11 +25,27 @@ public interface ISubmissionManager {
 
 	Long getSubmittedSubmissionDataCount(Long submitteId, Collection<Integer> submissionPhaseNos);
 
-	ISubmissionExtension getSubmissionExtension(ISubmission submission, ISubmissionPhase submissionPhase);
+//	ISubmissionExtension getSubmissionExtension(ISubmission submission, ISubmissionPhase submissionPhase);
+
+	long getSubmissionExtensionCount(ISubmission submission, LocalDateTime dateUntil_From,
+			ISubmissionPhase... submissionPhases);
 
 	void save(ISubmission submission);
 
 	void save(ISubmissionData submissionData);
+
+	default boolean isSubmissionPhaseActive(ISubmissionData submissionData) {
+		// maybe should check for submission extensions of other phases
+		ISubmissionPhase submissionPhase = submissionData.getSubmissionPhase();
+		if (!submissionPhase.isPhaseActive()) {
+			if (getSubmissionExtensionCount(submissionData.getSubmission(), LocalDateTime.now(),
+					submissionPhase) == 0) {
+				return false;
+			}
+			return true;
+		}
+		return false;
+	}
 
 	default void validateTemporarySave(ISubmissionData submissionData) {
 		// 1. check if temporary saving is supported
@@ -39,15 +54,12 @@ public interface ISubmissionManager {
 			throw new UnsupportedOperationException();
 		}
 		// 2. check status
-		if (submissionData.isTemporarySaved()) {
+		if (!submissionData.isTemporarySaved()) {
 			throw new InvalidStatusException();
 		}
 		// 3. check if submission phase is active
-		if (!submissionPhase.isPhaseActive()) {
-			ISubmissionExtension extension = getSubmissionExtension(submissionData.getSubmission(), submissionPhase);
-			if (extension == null || extension.getDateUntil().isBefore(LocalDateTime.now())) {
-				throw new SubmissionPhaseIsNotActiveException();
-			}
+		if (!isSubmissionPhaseActive(submissionData)) {
+			throw new SubmissionPhaseIsNotActiveException();
 		}
 		// 4. check if previous data are submitted
 		Set<Integer> requiredPreviousPhases = submissionPhase.getRequiresSubmissionOfPreviousPhases();
@@ -79,17 +91,14 @@ public interface ISubmissionManager {
 
 	default void validateSubmission(ISubmissionData submissionData) {
 		// 1. check status
-		if (submissionData.isSubmitted()) {
+		if (!submissionData.isSubmitted()) {
 			throw new InvalidStatusException();
 		}
 		// 2. check if submission phase is active
 		ISubmission submission = submissionData.getSubmission();
 		ISubmissionPhase submissionPhase = submissionData.getSubmissionPhase();
-		if (!submissionPhase.isPhaseActive()) {
-			ISubmissionExtension extension = getSubmissionExtension(submission, submissionPhase);
-			if (extension == null || extension.getDateUntil().isBefore(LocalDateTime.now())) {
-				throw new SubmissionPhaseIsNotActiveException();
-			}
+		if (!isSubmissionPhaseActive(submissionData)) {
+			throw new SubmissionPhaseIsNotActiveException();
 		}
 		// 3. check if previous data are submitted
 		Set<Integer> requiredPreviousPhases = submissionPhase.getRequiresSubmissionOfPreviousPhases();
