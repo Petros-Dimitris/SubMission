@@ -1,7 +1,6 @@
 package managers;
 
 import java.time.LocalDateTime;
-import java.util.Collection;
 import java.util.Set;
 
 import interfaces.ISubmission;
@@ -23,7 +22,8 @@ public interface ISubmissionManager {
 
 	Long getActiveSubmissionCount(Long submitterId, Long submissionCycleId);
 
-	Long getSubmittedSubmissionDataCount(Long submitteId, Collection<Integer> submissionPhaseNos);
+	Long getSubmittedSubmissionDataCount(ISubmission iSubmission,
+			Set<Class<? extends ISubmissionPhase>> requiredPreviousPhases);
 
 //	ISubmissionExtension getSubmissionExtension(ISubmission submission, ISubmissionPhase submissionPhase);
 
@@ -62,7 +62,8 @@ public interface ISubmissionManager {
 			throw new SubmissionPhaseIsNotActiveException();
 		}
 		// 4. check if previous data are submitted
-		Set<Integer> requiredPreviousPhases = submissionPhase.getRequiresSubmissionOfPreviousPhases();
+		Set<Class<? extends ISubmissionPhase>> requiredPreviousPhases = submissionPhase
+				.getRequiresSubmissionOfPreviousPhases();
 		if (requiredPreviousPhases != null && !requiredPreviousPhases.isEmpty()) {
 			if (getSubmittedSubmissionDataCount(submissionData.getSubmission(),
 					requiredPreviousPhases) != requiredPreviousPhases.size()) {
@@ -82,8 +83,6 @@ public interface ISubmissionManager {
 		}
 	}
 
-	int getSubmittedSubmissionDataCount(ISubmission submission, Set<Integer> requiredPreviousPhases);
-
 	default void temporarySave(ISubmissionData submissionData) {
 		validateTemporarySave(submissionData);
 		save(submissionData);
@@ -101,7 +100,8 @@ public interface ISubmissionManager {
 			throw new SubmissionPhaseIsNotActiveException();
 		}
 		// 3. check if previous data are submitted
-		Set<Integer> requiredPreviousPhases = submissionPhase.getRequiresSubmissionOfPreviousPhases();
+		Set<Class<? extends ISubmissionPhase>> requiredPreviousPhases = submissionPhase
+				.getRequiresSubmissionOfPreviousPhases();
 		if (requiredPreviousPhases != null && !requiredPreviousPhases.isEmpty()) {
 			if (getSubmittedSubmissionDataCount(submissionData.getSubmission(),
 					requiredPreviousPhases) != requiredPreviousPhases.size()) {

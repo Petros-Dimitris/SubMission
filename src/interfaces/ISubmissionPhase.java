@@ -16,7 +16,7 @@ public interface ISubmissionPhase {
 
 	Integer getPhaseNo();
 
-	Set<Integer> getRequiresSubmissionOfPreviousPhases();
+	Set<Class<? extends ISubmissionPhase>> getRequiresSubmissionOfPreviousPhases();
 
 	LocalDateTime getActiveFrom();
 

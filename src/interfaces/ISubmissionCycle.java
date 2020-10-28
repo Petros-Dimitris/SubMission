@@ -6,9 +6,8 @@ public interface ISubmissionCycle extends IBase<Long> {
 
 	Integer getMaximumSubmissionsPerSubmitter();
 
+	@Deprecated
 	Boolean getSupportsNewSubmissionAfterCancellation();
-
-	ISubmissionPhase getActiveSubmissionPhase();
 
 	SubmissionCycleStatus getStatus();
 
